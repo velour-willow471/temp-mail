@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>临时邮箱 · velour.de5.net</title>
+<style>
+  :root{--bg:#0f1115;--card:#171a21;--line:#262b36;--txt:#e8eaf0;--dim:#9aa3b2;--acc:#5b8cff;--ok:#3fb96f}
+  *{box-sizing:border-box} body{margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt)}
+  .wrap{max-width:760px;margin:0 auto;padding:28px 18px 60px}
+  h1{font-size:26px;margin:6px 0 4px} .sub{color:var(--dim);font-size:14px;margin-bottom:22px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+  .label{font-size:12px;color:var(--dim);letter-spacing:.08em;margin-bottom:8px}
+  .addr{font-size:20px;font-weight:600;word-break:break-all}
+  button{background:var(--acc);color:#fff;border:0;border-radius:9px;padding:9px 16px;font-size:14px;cursor:pointer}
+  button.ghost{background:#232833;color:var(--txt)}
+  button:active{transform:scale(.98)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  input{background:#10131a;border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:9px 12px;font-size:15px;flex:1;min-width:140px}
+  .item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--line);gap:10px}
+  .item:first-of-type{border-top:0}
+  .item .a{word-break:break-all;font-size:15px}
+  .steps{color:var(--dim);font-size:14px;line-height:1.9}
+  .steps b{color:var(--txt)}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px}
+  .small{font-size:12.5px;color:var(--dim);line-height:1.8}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#232833;border:1px solid var(--line);padding:9px 18px;border-radius:99px;font-size:14px;opacity:0;transition:.25s;pointer-events:none}
+  .toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📬 临时邮箱</h1>
+  <div class="sub">自有域名 <b>@velour.de5.net</b> · 任意地址直接能收，无需注册、无需密码</div>
+
+  <div class="card">
+    <div class="label">当前地址（点复制就能用）</div>
+    <div class="row" style="justify-content:space-between">
+      <span class="addr" id="current">muserbu120@velour.de5.net</span>
+      <button onclick="copyText(document.getElementById('current').textContent)">复制</button>
+    </div>
+    <div class="small" style="margin-top:10px"><span class="dot"></span>收信链路已通：邮件 → ForwardEmail 全域转发 → 中央收件箱 velour@v.cd</div>
+  </div>
+
+  <div class="card">
+    <div class="label">生成新地址</div>
+    <div class="row">
+      <input id="prefix" placeholder="自定义前缀，如 muse-test">
+      <span style="color:var(--dim)">@velour.de5.net</span>
+      <button class="ghost" onclick="randomGen()">🎲 随机</button>
+      <button onclick="addAddr()">生成</button>
+    </div>
+    <div id="list" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <div class="label">怎么用</div>
+    <div class="steps">
+      <b>1.</b> 复制任意 @velour.de5.net 地址，拿去注册网站<br>
+      <b>2.</b> 验证码邮件会自动转发进中央收件箱（ForwardEmail 首次投递可能灰名单延迟几分钟，属正常）<br>
+      <b>3.</b> 在聊天里跟淑柔说一声「查收件箱」，她去取验证码给你 —— 取码后至少等 10 秒再提交<br>
+      <b>4.</b> 用完即弃，换个前缀就是新邮箱，不限数量
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">备用公共临时邮箱（mail.tm）</div>
+    <div class="row" style="justify-content:space-between">
+      <span class="addr" style="font-size:16px">musez2ho66ullr@euploading.com</span>
+      <button class="ghost" onclick="copyText('musez2ho66ullr@euploading.com')">复制</button>
+    </div>
+    <div class="small" style="margin-top:8px">自有域名被个别站点拦时用这个；收件箱由淑柔代查。</div>
+  </div>
+
+  <div class="card">
+    <div class="label">域名状态（2026-11-17 实查）</div>
+    <div class="small">
+      NS：indie / rob.ns.cloudflare.com（Cloudflare 已激活，到期 2027-11-10）<br>
+      MX：mx1 / mx2.forwardemail.net · TXT：forward-email=velour@v.cd（全域 catch-all）<br>
+      实达记录：2026-11-10 转发核实通过；2026-11-14 Telnyx 登录信经此链路实达
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast">已复制</div>
+<script>
+  const KEY='tempmail-addrs-v1';
+  const load=()=>JSON.parse(localStorage.getItem(KEY)||'[]');
+  const save=a=>localStorage.setItem(KEY,JSON.stringify(a));
+  function toast(){const t=document.getElementById('toast');t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1400)}
+  function copyText(s){navigator.clipboard.writeText(s).then(toast)}
+  function render(){
+    const list=document.getElementById('list'); const a=load();
+    list.innerHTML=a.length?a.map((x,i)=>`<div class="item"><span class="a">${x}</span><span class="row"><button class="ghost" onclick="copyText('${x}')">复制</button><button class="ghost" onclick="del(${i})">删</button></span></div>`).join(''):'<div class="small">还没有生成记录，上面生成一个吧。</div>';
+  }
+  function del(i){const a=load();a.splice(i,1);save(a);render()}
+  function addAddr(){
+    let p=document.getElementById('prefix').value.trim().toLowerCase().replace(/[^a-z0-9._-]/g,'');
+    if(!p){randomGen();return}
+    const addr=p+'@velour.de5.net'; const a=load(); if(!a.includes(addr)){a.unshift(addr);save(a)}
+    document.getElementById('current').textContent=addr; document.getElementById('prefix').value=''; render(); copyText(addr);
+  }
+  function randomGen(){
+    const c='abcdefghijklmnopqrstuvwxyz0123456789'; let s='muse';
+    for(let i=0;i<6;i++)s+=c[Math.floor(Math.random()*c.length)];
+    document.getElementById('prefix').value=s; addAddr();
+  }
+  render();
+</script>
+</body>
+</html>
